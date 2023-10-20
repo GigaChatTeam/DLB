@@ -1,6 +1,7 @@
 import datetime
 
 from django.http import HttpRequest, JsonResponse
+from django.views.decorators.http import require_http_methods
 
 from .. import helper
 from . import exceptions
@@ -92,6 +93,7 @@ class UsersLoader:
                 return form
 
     @classmethod
+    @require_http_methods(["GET"])
     def channels(cls, request: HttpRequest):
         try:
             form = cls.Parser.channels(request)
@@ -105,8 +107,8 @@ class UsersLoader:
                 }
             }, status=406)
 
-
     @classmethod
+    @require_http_methods(["GET"])
     def messages(cls, request: HttpRequest, *, channel):
         try:
             form = cls.Parser.messages(request, channel)

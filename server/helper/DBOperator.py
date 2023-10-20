@@ -29,49 +29,49 @@ def load_messages_from(channel: int, *, start = constants.UNIX, end = datetime.d
     cursor = connection.cursor()
 
     cursor.execute("""
-            SELECT
-                "index".posted,
-                "index".author,
-                "index".alias,
-                "index".type,
-                data.data,
-                data.attachments,
-                CASE WHEN
-                    MAX(data.version) <> 1
-                    THEN
-                        true
-                    ELSE
-                        false
-                END AS edited
-            FROM
-                channels.messages "index"
-            JOIN
-                channels.messages_data data
-                ON
-                    "index".channel = data.channel AND
-                    "index".posted = data.posted
-            WHERE
-                data.version = (
-                    SELECT MAX(version)
-                    FROM channels.messages_data
-                    WHERE
-                        channel = "index".channel AND
-                        posted = "index".posted
-                ) AND
-                "index".channel = %s AND
-                "index".posted > %s AND
-                "index".posted < %s
-            GROUP BY
-                "index".posted,
-                "index".author,
-                "index".alias,
-                "index".type,
-                data.data,
-                data.attachments
-            ORDER BY
-                "index".posted ASC
-            LIMIT %s
-        """, (channel, start, end, limit))
+        SELECT
+            "index".posted,
+            "index".author,
+            "index".alias,
+            "index".type,
+            data.data,
+            data.attachments,
+            CASE WHEN
+                MAX(data.version) <> 1
+                THEN
+                    true
+                ELSE
+                    false
+            END AS edited
+        FROM
+            channels.messages "index"
+        JOIN
+            channels.messages_data data
+            ON
+                "index".channel = data.channel AND
+                "index".posted = data.posted
+        WHERE
+            data.version = (
+                SELECT MAX(version)
+                FROM channels.messages_data
+                WHERE
+                    channel = "index".channel AND
+                    posted = "index".posted
+            ) AND
+            "index".channel = %s AND
+            "index".posted > %s AND
+            "index".posted < %s
+        GROUP BY
+            "index".posted,
+            "index".author,
+            "index".alias,
+            "index".type,
+            data.data,
+            data.attachments
+        ORDER BY
+            "index".posted ASC
+        LIMIT %s
+    """, (channel, start, end, limit))
 
     return [{
         'posted': element[0],

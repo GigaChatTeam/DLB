@@ -107,6 +107,11 @@ class UsersLoader:
                 }
             }, status=406)
 
+        return JsonResponse(
+            helper.DBOperator.select_allowed_channels(client=form['channel']),
+            safe=False, status=200
+        )
+
     @classmethod
     @require_http_methods(["GET"])
     def messages(cls, request: HttpRequest, *, channel):

@@ -6,20 +6,6 @@ from django.views.decorators.http import require_http_methods
 from .. import helper
 from . import exceptions
 
-def load_messages(request: HttpRequest, channel=None):
-    form = {
-        'channel': channel or int(request.GET.get('channel', 0)),
-        'start': helper.parser.parse_datetime(request.GET.get('start', None)) or helper.constants.UNIX,
-        'client': request.GET.get('client', None),
-        'limit': int(request.GET.get('limit', 50))
-    }
-
-    form['limit'] = abs(form['limit']) if abs(form['limit']) < 50 else 50
-
-    return JsonResponse(
-        helper.DBOperator.load_last_messages(form['channel']),
-        safe=False, status=200
-    )
 
 class UsersLoader:
     class Parser:
@@ -108,7 +94,7 @@ class UsersLoader:
             }, status=406)
 
         return JsonResponse(
-            helper.DBOperator.select_allowed_channels(client=form['channel']),
+            helper.DBOperator.UsersExecutor.Channels.get(form['channel']),
             safe=False, status=200
         )
 
@@ -128,7 +114,7 @@ class UsersLoader:
             }, status=406)
 
         return JsonResponse(
-            helper.DBOperator.load_last_messages(channel=form['channel'], limit=form['limit']),
+            helper.DBOperator.UsersExecutor.Channels.load_last_messages(form['channel'], form['limit']),
             safe=False, status=200
         )
 

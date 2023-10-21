@@ -4,13 +4,13 @@ from django.urls import path, include
 from .views import handlers
 
 
-def passer(request):
+def passer(_):
     return HttpResponse(status=501)
 
 
 urlpatterns = [
     path('history/', include([
-        path('channels', passer),
+        path('channels', handlers.UsersLoader.channels),
         path('channels/<int:channel>/', include([
             path('messages', handlers.UsersLoader.messages),
             path('users', passer),

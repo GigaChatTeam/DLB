@@ -116,27 +116,21 @@ class UsersExecutor:
                     "index".type,
                     data.data,
                     data.attachments,
-                    CASE WHEN
-                        MAX(data.version) <> 1
-                        THEN
-                            true
-                        ELSE
-                            false
-                    END AS edited
+                    MAX(data.version) <> 1
                 FROM
                     channels.messages "index"
                 JOIN
                     channels.messages_data data
                     ON
                         "index".channel = data.channel AND
-                        "index".posted = data.posted
+                        "index".posted = data.original
                 WHERE
                     data.version = (
                         SELECT MAX(version)
                         FROM channels.messages_data
                         WHERE
-                            channel = "index".channel AND
-                            posted = "index".posted
+                            channels.messages_data.channel = "index".channel AND
+                            channels.messages_data.original = "index".posted
                     ) AND
                     "index".channel = %s AND
                     "index".posted > %s AND
@@ -174,27 +168,21 @@ class UsersExecutor:
                     "index".type,
                     data.data,
                     data.attachments,
-                    CASE WHEN
-                        MAX(data.version) <> 1
-                        THEN
-                            true
-                        ELSE
-                            false
-                    END AS edited
+                    MAX(data.version) <> 1
                 FROM
                     channels.messages "index"
                 JOIN
                     channels.messages_data data
                     ON
                         "index".channel = data.channel AND
-                        "index".posted = data.posted
+                        "index".posted = data.original
                 WHERE
                     data.version = (
                         SELECT MAX(version)
                         FROM channels.messages_data
                         WHERE
-                            channel = "index".channel AND
-                            posted = "index".posted
+                            channels.messages_data.channel = "index".channel AND
+                            channels.messages_data.original = "index".posted
                     ) AND
                     "index".channel = %s
                 GROUP BY
@@ -205,15 +193,18 @@ class UsersExecutor:
                     data.data,
                     data.attachments
                 ORDER BY
-                    "index".posted DESC
+                    "index".posted ASC
                 LIMIT %s
            """, (channel, limit))
 
             return [{
                 'posted': element[0],
-                'author': element[1] if element[2] == 'SYSTEM' else None,
+                'author': element[1],
                 'alias': element[2],
                 'type': element[3],
                 'data': element[4],
-                'attachments': element[5]
+                'attachments': element[5],
+                'edited': element[6]
             } for element in cursor.fetchall()]
+
+print(UsersExecutor.Channels.load_last_messages(5))

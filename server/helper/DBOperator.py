@@ -2,7 +2,9 @@ import datetime
 
 import psycopg2
 
+from . import parser
 from ..helper import constants
+
 
 connection = psycopg2.connect(host='localhost', port=5432, user='postgres', password='password')
 
@@ -148,8 +150,8 @@ class UsersExecutor:
             """, (channel, start, end, limit))
 
             return [{
-                'posted': element[0],
-                'author': element[1] if element[2] == 'SYSTEM' else None,
+                'posted': parser.serialize_datetime(element[0]),
+                'author': element[1],
                 'alias': element[2],
                 'type': element[3],
                 'data': element[4],
@@ -198,7 +200,7 @@ class UsersExecutor:
            """, (channel, limit))
 
             return [{
-                'posted': element[0],
+                'posted': parser.serialize_datetime(element[0]),
                 'author': element[1],
                 'alias': element[2],
                 'type': element[3],
@@ -206,5 +208,3 @@ class UsersExecutor:
                 'attachments': element[5],
                 'edited': element[6]
             } for element in cursor.fetchall()]
-
-print(UsersExecutor.Channels.load_last_messages(5))

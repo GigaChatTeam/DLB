@@ -16,12 +16,12 @@ class UsersLoader:
             missing = []
 
             try:
-                form['client'] = request.POST['client']
+                form['client'] = request.GET['client']
             except KeyError:
                 missing.append('client')
 
             try:
-                form['token'] = request.POST['token']
+                form['token'] = request.GET['token']
             except KeyError:
                 missing.append('token')
 
@@ -64,12 +64,12 @@ class UsersLoader:
             missing = []
 
             try:
-                form['client'] = request.POST['client']
+                form['client'] = request.GET['client']
             except KeyError:
                 missing.append('client')
 
             try:
-                form['token'] = request.POST['token']
+                form['token'] = request.GET['token']
             except KeyError:
                 missing.append('token')
 
@@ -78,11 +78,11 @@ class UsersLoader:
             else:
                 return form
 
-    @classmethod
+    @staticmethod
     @require_http_methods(["GET"])
-    def channels(cls, request: HttpRequest):
+    def channels(request: HttpRequest):
         try:
-            form = cls.Parser.channels(request)
+            form = UsersLoader.Parser.channels(request)
         except exceptions.MissingValues as error:
             return JsonResponse({
                 'status': 'Refused',
@@ -98,11 +98,11 @@ class UsersLoader:
             safe=False, status=200
         )
 
-    @classmethod
+    @staticmethod
     @require_http_methods(["GET"])
-    def messages(cls, request: HttpRequest, *, channel):
+    def messages(request: HttpRequest, *, channel):
         try:
-            form = cls.Parser.messages(request, channel)
+            form = UsersLoader.Parser.messages(request, channel)
         except exceptions.MissingValues as error:
             return JsonResponse({
                 'status': 'Refused',

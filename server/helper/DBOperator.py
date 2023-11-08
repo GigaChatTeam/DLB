@@ -18,15 +18,15 @@ def committer(func):
     return wrapper
 
 
-class PermissionExecutor(object):
+class PermissionExecutor:
     @staticmethod
     @committer
-    def validate_ttoken(client: int, token: str, intention: list[str, ...]):
+    def validate_ttoken(client: int, token: str, intention: list[str, ...], default = False):
         cursor = connection.cursor()
 
         cursor.execute("""
-            SELECT public.validate_ttoken(%s, %s, %s)
-        """, (client, token, intention))
+            SELECT public.validate_ttoken(%s, %s, %s, %s)
+        """, (client, token, intention, default))
 
         try:
             return cursor.fetchone()[0]

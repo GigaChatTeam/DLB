@@ -1,9 +1,11 @@
-SECRET_KEY = 'django-insecure-5qgnnfl2^u-@@a2+yu1iq(swstlos4*c7p8_ob3+4$^pva=5am'
+from decouple import config
 
-ALLOWED_HOSTS = ['*']
+
+SECRET_KEY = config("SECRET_KEY")
+DEBUG = config("DEBUG", cast=bool)
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=list[str])
+
 ROOT_URLCONF = 'server.urls'
-
-DEBUG = True
 
 DATABASES = {
     'default': {
@@ -15,9 +17,3 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-
-# MIDDLEWARE = (
-#     'django_ratelimit.middleware.RatelimitMiddleware',
-# )
-#
-# RATELIMIT_VIEW = 'server.views.ratelimited'

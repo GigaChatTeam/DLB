@@ -4,6 +4,7 @@ import psycopg2
 
 from . import parser
 from ..helper import constants
+from ..views import exceptions
 
 
 connection = psycopg2.connect(host='localhost', port=5432, user='postgres', password='password')
@@ -19,20 +20,6 @@ def committer(func):
 
 
 class PermissionExecutor:
-    @staticmethod
-    @committer
-    def validate_ttoken(client: int, token: str, intention: list[str, ...], default = False):
-        cursor = connection.cursor()
-
-        cursor.execute("""
-            SELECT public.validate_ttoken(%s, %s, %s, %s)
-        """, (client, token, intention, default))
-
-        try:
-            return cursor.fetchone()[0]
-        except IndexError:
-            return False
-
     class Channels:
         @staticmethod
         def have_permission(client: int, channel: int, permission: list[int, int, int, int]):
@@ -88,23 +75,50 @@ class PermissionExecutor:
 class UsersExecutor:
     class Channels:
         @staticmethod
-        def get(client: int):
+        @committer
+        def get(client: int, ttoken: str):
             cursor = connection.cursor()
 
             cursor.execute("""
-                SELECT "index".id
-                FROM channels.index "index"
-                JOIN
-                    channels.users users
-                    ON
-                        "index".id = users.channel
-                WHERE
-                    "index".enabled = TRUE AND
-                    users.leaved IS NULL AND
-                    users.client = %s
-            """, (client,))
+                SELECT * FROM channels.select_channels(%s, %s) AS (
+                    id BIGINT,
+                    title TEXT,
+                    description TEXT,
+                    avatar BIGINT,
+                    links TEXT[],
+                    created TIMESTAMP,
+                    enabled BOOLEAN
+                )
+            """, (client, ttoken))
 
-            return tuple(x[0] for x in cursor.fetchall())
+            data = cursor.fetchall()
+
+            if not data:
+                raise exceptions.AccessDenied()
+            elif data[0][0] == 0:
+                return {
+                    'count': 0,
+                    'channels': []
+                }
+            else:
+                returns = {
+                    'count': len(data),
+                    'channels': []
+                }
+
+                for record in data:
+                    returns['channels'].append({
+                        'id': record[0],
+                        'title': record[1],
+                        'description': record[2],
+                        'avatar': record[3],
+                        'links': record[4],
+                        'created': parser.serialize_datetime(record[5]),
+                        'enabled': (record[6])
+                    })
+
+                return returns
+
 
         @staticmethod
         def load_messages(channel: int, *, start=constants.UNIX, end=datetime.datetime.now(), limit: int = 20):

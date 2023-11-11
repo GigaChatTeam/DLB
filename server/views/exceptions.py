@@ -3,3 +3,7 @@ class MissingValues(Exception):
         self.invalid = invalid
         self.missing = missing
         super().__init__()
+
+
+class AccessDenied(Exception):
+    ...

@@ -1,4 +1,4 @@
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest, JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 
 from . import exceptions
@@ -22,12 +22,14 @@ class UsersLoader:
                 }
             }, status=406)
 
-        return JsonResponse(
-            {
-                "client": form['client'],
-                "channels": helper.DBOperator.UsersExecutor.Channels.get(form['channel']),
-            }, status=200
-        )
+        try:
+            data = helper.DBOperator.UsersExecutor.Channels.get(form['client'], form['token'])
+        except exceptions.AccessDenied:
+            return HttpResponse(status=403)
+        else:
+            data['status'] = 'Done'
+
+            return JsonResponse(data, status=200)
 
     @staticmethod
     @require_http_methods(["GET"])

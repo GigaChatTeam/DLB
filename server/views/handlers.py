@@ -1,88 +1,17 @@
-import datetime
-
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from .. import helper
 from . import exceptions
+from . import parsers
+from .. import helper
 
 
 class UsersLoader:
-    class Parser:
-        @staticmethod
-        def messages(request: HttpRequest, channel):
-            form = {}
-            invalid = {}
-            missing = []
-
-            try:
-                form['client'] = request.GET['client']
-            except KeyError:
-                missing.append('client')
-
-            try:
-                form['token'] = request.GET['token']
-            except KeyError:
-                missing.append('token')
-
-            try:
-                form['channel'] = int(channel)
-            except ValueError:
-                invalid['channel'] = channel
-            except TypeError:
-                missing.append('channel')
-
-            try:
-                form['start'] = helper.parser.parse_datetime(request.GET.get('start', None))
-            except ValueError:
-                invalid['start'] = request.GET['start']
-            except TypeError:
-                form['start'] = helper.constants.UNIX
-
-            try:
-                form['end'] = helper.parser.parse_datetime(request.GET.get('end', None))
-            except ValueError:
-                invalid['end'] = request.GET['end']
-            except TypeError:
-                form['end'] = datetime.datetime.now()
-
-            try:
-                form['limit'] = int(request.GET.get('limit', 50))
-            except ValueError:
-                invalid['limit'] = request.GET['limit']
-            else:
-                form['limit'] = form['limit'] if form['limit'] < 50 else 50
-
-            if len(missing) != 0 or len(invalid) != 0:
-                raise exceptions.MissingValues(invalid, missing)
-            else:
-                return form
-
-        @staticmethod
-        def channels(request: HttpRequest):
-            form = {}
-            missing = []
-
-            try:
-                form['client'] = request.GET['client']
-            except KeyError:
-                missing.append('client')
-
-            try:
-                form['token'] = request.GET['token']
-            except KeyError:
-                missing.append('token')
-
-            if len(missing) != 0:
-                raise exceptions.MissingValues({}, missing)
-            else:
-                return form
-
     @staticmethod
     @require_http_methods(["GET"])
     def channels(request: HttpRequest):
         try:
-            form = UsersLoader.Parser.channels(request)
+            form = parsers.channels(request)
         except exceptions.MissingValues as error:
             return JsonResponse({
                 'status': 'Refused',
@@ -94,15 +23,17 @@ class UsersLoader:
             }, status=406)
 
         return JsonResponse(
-            helper.DBOperator.UsersExecutor.Channels.get(form['channel']),
-            safe=False, status=200
+            {
+                "client": form['client'],
+                "channels": helper.DBOperator.UsersExecutor.Channels.get(form['channel']),
+            }, status=200
         )
 
     @staticmethod
     @require_http_methods(["GET"])
     def messages(request: HttpRequest, *, channel):
         try:
-            form = UsersLoader.Parser.messages(request, channel)
+            form = parsers.messages(request, channel)
         except exceptions.MissingValues as error:
             return JsonResponse({
                 'status': 'Refused',

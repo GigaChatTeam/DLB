@@ -17,3 +17,8 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+
+
+MIDDLEWARE = [
+    'server.middleware.authorization.AccessDeniedMiddleware'
+]

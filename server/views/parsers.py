@@ -51,6 +51,11 @@ def messages(request: HttpRequest, channel):
     else:
         form['limit'] = form['limit'] if form['limit'] < 50 else 50
 
+    try:
+        form['offset'] = int(request.GET.get('offset', 0))
+    except (ValueError, TypeError):
+        invalid['offset'] = request.GET['offset']
+
     if len(missing) != 0 or len(invalid) != 0:
         raise exceptions.MissingValues(invalid, missing)
     else:
@@ -74,7 +79,7 @@ def channels(request: HttpRequest):
     except KeyError:
         missing.append('token')
 
-    if len(missing) != 0 and len(invalid) != 0:
+    if len(missing) != 0 or len(invalid) != 0:
         raise exceptions.MissingValues(invalid, missing)
     else:
         return form

@@ -10,19 +10,7 @@ class UsersLoader:
     @staticmethod
     @require_http_methods(["GET"])
     def channels(request: HttpRequest):
-        try:
-            form = parsers.channels(request)
-        except exceptions.MissingValues as error:
-            return JsonResponse({
-                'status': 'Refused',
-                'reason': 'IncorrectArguments',
-                'arguments': {
-                    'invalid': error.invalid,
-                    'missing': error.missing
-                }
-            }, status=406)
-
-        data = helper.DBOperator.UsersExecutor.Channels.get(form['client'], form['token'])
+        data = helper.DBOperator.UsersExecutor.Channels.get(**parsers.channels(request))
 
         data['status'] = 'Done'
 
@@ -31,22 +19,11 @@ class UsersLoader:
     @staticmethod
     @require_http_methods(["GET"])
     def messages(request: HttpRequest, *, channel):
-        try:
-            form = parsers.messages(request, channel)
-        except exceptions.MissingValues as error:
-            return JsonResponse({
-                'status': 'Refused',
-                'reason': 'IncorrectArguments',
-                'arguments': {
-                    'invalid': error.invalid,
-                    'missing': error.missing
-                }
-            }, status=406)
+        data = helper.DBOperator.UsersExecutor.Channels.get_messages(**parsers.messages(request, channel))
 
-        return JsonResponse(
-            helper.DBOperator.UsersExecutor.Channels.load_last_messages(form['channel'], form['limit']),
-            safe=False, status=200
-        )
+        data['status'] = 'Done'
+
+        return JsonResponse(data, status=200)
 
 class AdminLoader:
     pass

@@ -76,7 +76,7 @@ class UsersExecutor:
     class Channels:
         @staticmethod
         @committer
-        def get(client: int, ttoken: str):
+        def get(client: int, token: str):
             cursor = connection.cursor()
 
             cursor.execute("""
@@ -89,7 +89,7 @@ class UsersExecutor:
                     created TIMESTAMP,
                     enabled BOOLEAN
                 )
-            """, (client, ttoken))
+            """, (client, token))
 
             data = cursor.fetchall()
 
@@ -114,111 +114,55 @@ class UsersExecutor:
                         'avatar': record[3],
                         'links': record[4],
                         'created': parser.serialize_datetime(record[5]),
-                        'enabled': (record[6])
+                        'enabled': record[6]
                     })
 
                 return returns
 
-
         @staticmethod
-        def load_messages(channel: int, *, start=constants.UNIX, end=datetime.datetime.now(), limit: int = 20):
+        @committer
+        def get_messages(client: int, channel: int, token: str, *,
+                         start=constants.UNIX, end=datetime.datetime.now(), limit: int = 20, offset: int = 0):
             cursor = connection.cursor()
 
             cursor.execute("""
-                SELECT
-                    "index".posted,
-                    "index".author,
-                    "index".alias,
-                    "index".type,
-                    data.data,
-                    data.attachments,
-                    MAX(data.version) <> 1
-                FROM
-                    channels.messages "index"
-                JOIN
-                    channels.messages_data data
-                    ON
-                        "index".channel = data.channel AND
-                        "index".posted = data.original
-                WHERE
-                    data.version = (
-                        SELECT MAX(version)
-                        FROM channels.messages_data
-                        WHERE
-                            channels.messages_data.channel = "index".channel AND
-                            channels.messages_data.original = "index".posted
-                    ) AND
-                    "index".channel = %s AND
-                    "index".posted > %s AND
-                    "index".posted < %s
-                GROUP BY
-                    "index".posted,
-                    "index".author,
-                    "index".alias,
-                    "index".type,
-                    data.data,
-                    data.attachments
-                ORDER BY
-                    "index".posted ASC
-                LIMIT %s
-            """, (channel, start, end, limit))
+                SELECT * FROM channels.select_messages(%s, %s, %s, %s, %s, %s, %s) AS (
+                    posted TIMESTAMP,
+                    author BIGINT,
+                    alias CHAR(32),
+                    type CHAR(12),
+                    data TEXT,
+                    attachments JSONB,
+                    edited BOOLEAN
+                )
+            """, (client, channel, start, end, limit, offset, token))
 
-            return [{
-                'posted': parser.serialize_datetime(element[0]),
-                'author': element[1],
-                'alias': element[2],
-                'type': element[3],
-                'data': element[4],
-                'attachments': element[5]
-            } for element in cursor.fetchall()]
+            data = cursor.fetchall()
 
-        @staticmethod
-        def load_last_messages(channel: int, limit: int = 50):
-            cursor = connection.cursor()
+            if not data:
+                raise exceptions.AccessDenied()
+            elif data[0][1] == 0:
+                return {
+                    'count': 0,
+                    'channel': channel,
+                    'data': []
+                }
+            else:
+                returns = {
+                    'count': len(data),
+                    'channel': channel,
+                    'data': []
+                }
 
-            cursor.execute("""
-                SELECT
-                    "index".posted,
-                    "index".author,
-                    "index".alias,
-                    "index".type,
-                    data.data,
-                    data.attachments,
-                    MAX(data.version) <> 1
-                FROM
-                    channels.messages "index"
-                JOIN
-                    channels.messages_data data
-                    ON
-                        "index".channel = data.channel AND
-                        "index".posted = data.original
-                WHERE
-                    data.version = (
-                        SELECT MAX(version)
-                        FROM channels.messages_data
-                        WHERE
-                            channels.messages_data.channel = "index".channel AND
-                            channels.messages_data.original = "index".posted
-                    ) AND
-                    "index".channel = %s
-                GROUP BY
-                    "index".posted,
-                    "index".author,
-                    "index".alias,
-                    "index".type,
-                    data.data,
-                    data.attachments
-                ORDER BY
-                    "index".posted ASC
-                LIMIT %s
-           """, (channel, limit))
+                for record in data:
+                    returns['data'].append({
+                        'posted': parser.serialize_datetime(record[0]),
+                        'author': record[1],
+                        'alias': record[2].strip() if record[2] is not None else None,
+                        'type': record[3].strip(),
+                        'data': record[4],
+                        'attachments': record[5],
+                        'edited': record[6]
+                    })
 
-            return [{
-                'posted': parser.serialize_datetime(element[0]),
-                'author': element[1],
-                'alias': element[2],
-                'type': element[3],
-                'data': element[4],
-                'attachments': element[5],
-                'edited': element[6]
-            } for element in cursor.fetchall()]
+                return returns

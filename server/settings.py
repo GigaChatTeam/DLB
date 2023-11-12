@@ -20,5 +20,6 @@ DATABASES = {
 
 
 MIDDLEWARE = [
-    'server.middleware.authorization.AccessDeniedMiddleware'
+    'server.middleware.authorization.AccessDeniedMiddleware',
+    'server.middleware.parameters.MissingParametersMiddleware'
 ]

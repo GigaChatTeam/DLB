@@ -3,11 +3,17 @@ import datetime
 import psycopg2
 
 from .validator import verify as verify_token
+from .. import settings
 from ..helper import constants
 from ..views import exceptions
 
-connection = psycopg2.connect(host='localhost', port=5432, user='postgres', password='password')
-
+connection = psycopg2.connect(
+    host=settings.DATABASES['default']['HOST'],
+    port=settings.DATABASES['default']['PORT'],
+    user=settings.DATABASES['default']['USER'],
+    password=settings.DATABASES['default']['PASSWORD'],
+    application_name=settings.DATABASES['default']['APPLICATION']
+)
 
 def committer(func):
     def wrapper(*args, **kwargs):

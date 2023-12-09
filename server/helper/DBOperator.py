@@ -2,11 +2,9 @@ import datetime
 
 import psycopg2
 
-from . import parser
 from .validator import verify as verify_token
 from ..helper import constants
 from ..views import exceptions
-
 
 connection = psycopg2.connect(host='localhost', port=5432, user='postgres', password='password')
 
@@ -95,94 +93,84 @@ class PermissionExecutor:
 class UsersExecutor:
     class Channels:
         @staticmethod
-        @committer
         def get(client: int, token: str):
+            if not token_validator(client, token):
+                raise exceptions.AccessDenied()
+
             cursor = connection.cursor()
 
             cursor.execute("""
-                SELECT * FROM channels.select_channels(%s, %s) AS (
+                SELECT * FROM channels.select_channels(%s) AS (
                     id BIGINT,
                     title TEXT,
                     description TEXT,
                     avatar BIGINT,
-                    links TEXT[],
-                    created TIMESTAMP,
+                    created NUMERIC,
                     enabled BOOLEAN
                 )
-            """, (client, token))
+            """, (client,))
 
-            data = cursor.fetchall()
+            returns = []
 
-            if not data:
-                raise exceptions.AccessDenied()
-            elif data[0][0] == 0:
-                return {
-                    'count': 0,
-                    'channels': []
-                }
-            else:
-                returns = {
-                    'count': len(data),
-                    'channels': []
-                }
+            for record in cursor.fetchall():
+                returns.append({
+                    'id': record[0],
+                    'title': record[1],
+                    'description': record[2],
+                    'avatar': record[3],
+                    'created': record[4],
+                    'enabled': record[5]
+                })
 
-                for record in data:
-                    returns['channels'].append({
-                        'id': record[0],
-                        'title': record[1],
-                        'description': record[2],
-                        'avatar': record[3],
-                        'links': record[4],
-                        'created': parser.serialize_datetime(record[5]),
-                        'enabled': record[6]
-                    })
-
-                return returns
+            return returns
 
         @staticmethod
-        @committer
-        def get_messages(client: int, channel: int, token: str, *,
-                         start=constants.UNIX, end=datetime.datetime.now(), limit: int = 20, offset: int = 0):
+        def get_messages(
+                client: int,
+                channel: int,
+                token: str,
+                *,
+                start=constants.UNIX,
+                end=datetime.datetime.now(),
+                limit: int = 50,
+                offset: int = 0
+        ):
             cursor = connection.cursor()
 
             cursor.execute("""
-                SELECT * FROM channels.select_messages(%s, %s, %s, %s, %s, %s, %s) AS (
-                    posted TIMESTAMP,
-                    author BIGINT,
-                    alias CHAR(32),
-                    type CHAR(12),
-                    data TEXT,
-                    attachments JSONB,
-                    edited BOOLEAN
-                )
-            """, (client, channel, start, end, limit, offset, token))
+                SELECT channels.validate_select_messages(%s, %s)
+            """, (channel, client))
 
-            data = cursor.fetchall()
-
-            if not data:
+            if not token_validator(client, token) or not cursor.fetchone()[0]:
                 raise exceptions.AccessDenied()
-            elif data[0][1] == 0:
-                return {
-                    'count': 0,
-                    'channel': channel,
-                    'data': []
-                }
-            else:
-                returns = {
-                    'count': len(data),
-                    'channel': channel,
-                    'data': []
-                }
 
-                for record in data:
-                    returns['data'].append({
-                        'posted': parser.serialize_datetime(record[0]),
-                        'author': record[1],
-                        'alias': record[2].strip() if record[2] is not None else None,
-                        'type': record[3].strip(),
-                        'data': record[4],
-                        'attachments': record[5],
-                        'edited': record[6]
-                    })
+            cursor = connection.cursor()
 
-                return returns
+            cursor.execute("""
+                SELECT * FROM channels.select_messages(%s::BIGINT, %s, %s, %s::INTEGER, %s::INTEGER) AS (
+                    posted NUMERIC,
+                    author BIGINT,
+                    alias UUID,
+                    type VARCHAR(12),
+                    media BIGINT[][],
+                    data TEXT,
+                    edited BOOLEAN,
+                    files BIGINT[]
+                )
+            """, (channel, start, end, limit, offset))
+
+            returns = []
+
+            for record in cursor.fetchall():
+                returns.append({
+                    'posted': record[0],
+                    'author': record[1],
+                    'alias': record[2],
+                    'type': record[3].strip(),
+                    'media': record[4],
+                    'data': record[5],
+                    'edited': record[6],
+                    'files': record[7]
+                })
+
+            return returns

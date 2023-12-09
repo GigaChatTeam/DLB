@@ -1,12 +1,10 @@
-import datetime
-
 from django.http import HttpRequest
 
 from . import exceptions
 from .. import helper
 
 
-def messages(request: HttpRequest, channel):
+def messages(request: HttpRequest, channel: int):
     form = {}
     invalid = {}
     missing = []
@@ -31,30 +29,36 @@ def messages(request: HttpRequest, channel):
         missing.append('channel')
 
     try:
-        form['start'] = helper.parser.parse_datetime(request.GET.get('start', None))
+        form['start'] = helper.parser.parse_datetime(request.GET['start'])
     except ValueError:
         invalid['start'] = request.GET['start']
-    except TypeError:
-        form['start'] = helper.constants.UNIX
+    except KeyError:
+        pass
 
     try:
-        form['end'] = helper.parser.parse_datetime(request.GET.get('end', None))
+        form['end'] = helper.parser.parse_datetime(request.GET['end'])
     except ValueError:
         invalid['end'] = request.GET['end']
-    except TypeError:
-        form['end'] = datetime.datetime.now()
+    except KeyError:
+        pass
 
     try:
-        form['limit'] = int(request.GET.get('limit', 50))
-    except ValueError:
+        form['limit'] = int(request.GET['limit'])
+        if form['limit'] not in range(1, 101):
+            raise ValueError()
+    except (ValueError, TypeError):
         invalid['limit'] = request.GET['limit']
-    else:
-        form['limit'] = form['limit'] if form['limit'] < 50 else 50
+    except KeyError:
+        pass
 
     try:
-        form['offset'] = int(request.GET.get('offset', 0))
+        form['offset'] = int(request.GET['offset'])
+        if form['offset'] < 0:
+            raise ValueError()
     except (ValueError, TypeError):
         invalid['offset'] = request.GET['offset']
+    except KeyError:
+        pass
 
     if len(missing) != 0 or len(invalid) != 0:
         raise exceptions.MissingValues(invalid, missing)

@@ -3,6 +3,7 @@ import datetime
 import psycopg2
 
 from . import parser
+from .validator import verify as verify_token
 from ..helper import constants
 from ..views import exceptions
 
@@ -17,6 +18,25 @@ def committer(func):
         return result
 
     return wrapper
+
+
+def token_validator(client: int, token: str):
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT
+            key
+        FROM
+            users.tokens
+        WHERE
+            client = %s
+    """, (client,))
+
+    for _token in cursor.fetchall():
+        if verify_token(token, _token[0].encode()):
+            return True
+
+    return False
 
 
 class PermissionExecutor:

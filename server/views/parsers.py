@@ -60,6 +60,19 @@ def messages(request: HttpRequest, channel: int):
     except KeyError:
         pass
 
+    try:
+        match request.GET['sort'].lower():
+            case 'asc':
+                form['sort'] = 'asc'
+            case 'desc':
+                form['sort'] = 'desc'
+            case _:
+                raise ValueError()
+    except ValueError:
+        invalid['sort'] = request.GET['sort']
+    except KeyError:
+        pass
+
     if len(missing) != 0 or len(invalid) != 0:
         raise exceptions.MissingValues(invalid, missing)
     else:

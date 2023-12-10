@@ -1,4 +1,5 @@
 import datetime
+from typing import Literal
 
 import psycopg2
 
@@ -14,6 +15,7 @@ connection = psycopg2.connect(
     password=settings.DATABASES['default']['PASSWORD'],
     application_name=settings.DATABASES['default']['APPLICATION']
 )
+connection.autocommit = True
 
 def committer(func):
     def wrapper(*args, **kwargs):
@@ -139,7 +141,8 @@ class UsersExecutor:
                 start=constants.UNIX,
                 end=datetime.datetime.now(),
                 limit: int = 50,
-                offset: int = 0
+                offset: int = 0,
+                sort: Literal["asc", "desc"] = 'desc'
         ):
             cursor = connection.cursor()
 
@@ -152,8 +155,8 @@ class UsersExecutor:
 
             cursor = connection.cursor()
 
-            cursor.execute("""
-                SELECT * FROM channels.select_messages(%s::BIGINT, %s, %s, %s::INTEGER, %s::INTEGER) AS (
+            cursor.execute(f"""
+                SELECT * FROM channels.select_messages_{sort}(%s::BIGINT, %s, %s, %s::INTEGER, %s::INTEGER) AS (
                     posted NUMERIC,
                     author BIGINT,
                     alias UUID,

@@ -1,5 +1,5 @@
-# History Load bridge
-server point that handles history loading requests
+# Data Load Bridge
+Server for provides one-time interactions
 
 # API
 nothing here yet...

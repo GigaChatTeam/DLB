@@ -17,6 +17,12 @@ DATABASES = {
         'HOST': config("DB_HOST"),
         'PORT': config("DB_PORT", cast=int),
         'APPLICATION': config("APPLICATION").format(id=SERVER_ID)
+    },
+    'S3': {
+        'HOST': config("S3_HOST"),
+        'ACCESS_KEY': config("S3_ACCESS_KEY"),
+        'SECRET_KEY': config("S3_SECRET_KEY"),
+        'SECURE': config("S3_SECURE", cast=bool, default=not DEBUG),
     }
 }
 

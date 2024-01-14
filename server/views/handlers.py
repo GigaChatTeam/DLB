@@ -9,7 +9,7 @@ class UsersLoader:
     @staticmethod
     @require_http_methods(["GET"])
     def channels(request: HttpRequest):
-        data = helper.DBOperator.UsersExecutor.Channels.get(**parsers.channels(request))
+        data = helper.SQLOperator.UsersExecutor.Channels.get(**parsers.channels(request))
 
         return JsonResponse({
             'status': 'Done',
@@ -20,7 +20,7 @@ class UsersLoader:
     @staticmethod
     @require_http_methods(["GET"])
     def messages(request: HttpRequest, *, channel: int):
-        data = helper.DBOperator.UsersExecutor.Channels.get_messages(**parsers.messages(request, channel))
+        data = helper.SQLOperator.UsersExecutor.Channels.get_messages(**parsers.messages(request, channel))
 
         return JsonResponse({
             'status': 'Done',

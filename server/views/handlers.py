@@ -1,7 +1,7 @@
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from . import parsers
+from . import parsers, exceptions
 from .. import helper
 
 
@@ -27,3 +27,27 @@ class UsersLoader:
             'count': data.__len__(),
             'data': data
         }, status=200)
+
+
+class ChannelsLoader:
+    class Meta:
+        @staticmethod
+        @require_http_methods(["GET"])
+        def join(request: HttpRequest):
+            form = parsers.channel_join(request)
+
+            if not helper.SQLOperator.token_validator(form["client"], form["token"]):
+                raise exceptions.AccessDenied()
+
+            result = helper.SQLOperator.UsersExecutor.Channels.Meta.join(form["uri"])
+
+            if result is None:
+                raise exceptions.NotFound()
+
+            if result["icon"] is not None:
+                result["icon"] = helper.S3Operator.get_presign_url(
+                    bucket=result["icon"]["bucket"],
+                    path=result["icon"]["path"]
+                )
+
+            return JsonResponse(result)

@@ -17,6 +17,7 @@ connection = psycopg2.connect(
 )
 connection.autocommit = True
 
+
 def committer(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
@@ -100,6 +101,48 @@ class PermissionExecutor:
 
 class UsersExecutor:
     class Channels:
+        class Meta:
+            @staticmethod
+            def join(uri: str):
+                cursor = connection.cursor()
+
+                cursor.execute("""
+                    SELECT 
+                        channels."index".id,
+                        channels."index".title,
+                        channels."index".description,
+                        channels."index".public,
+                        files."index".id IS NOT NULL,
+                        files."index".bucket,
+                        files."index"."path"
+                    FROM channels.invitations
+                    JOIN
+                        channels."index"
+                        ON channels.invitations.channel = channels."index".id
+                    LEFT JOIN
+                        files."index"
+                        ON channels."index"."avatar" = files."index"."id"
+                    WHERE
+                        channels.invitations.uri = %s AND
+                        channels.invitations.enabled
+                """, (uri,))
+
+                data = cursor.fetchone()
+
+                if data is None:
+                    return None
+
+                return {
+                    "id": data[0],
+                    "title": data[1],
+                    "description": data[2],
+                    "public": data[3],
+                    "icon": {
+                        "bucket": data[5],
+                        "path": data[6]
+                    } if data[4] else None
+                }
+
         @staticmethod
         def get(client: int, token: str):
             if not token_validator(client, token):

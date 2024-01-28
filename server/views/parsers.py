@@ -100,3 +100,31 @@ def channels(request: HttpRequest):
         raise exceptions.MissingValues(invalid, missing)
     else:
         return form
+
+
+def channel_join(request: HttpRequest):
+    form = {}
+    invalid = {}
+    missing = []
+
+    try:
+        form['client'] = int(request.GET['client'])
+    except KeyError:
+        missing.append('client')
+    except ValueError:
+        invalid['client'] = request.GET['client']
+
+    try:
+        form['token'] = request.GET['token']
+    except KeyError:
+        missing.append('token')
+
+    try:
+        form['uri'] = request.GET['uri']
+    except KeyError:
+        missing.append('uri')
+
+    if len(missing) != 0 or len(invalid) != 0:
+        raise exceptions.MissingValues(invalid, missing)
+    else:
+        return form

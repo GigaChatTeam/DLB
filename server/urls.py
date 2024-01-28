@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.urls import path, include
 
-from .views import handlers
+from .views.handlers import ChannelsLoader
 
 
 def passer(*_, **__):
@@ -10,7 +10,7 @@ def passer(*_, **__):
 
 urlpatterns = [
     path('channel/', include([
-        path('join', passer),
+        path('join', ChannelsLoader.Meta.join),
         path('<int:channel>', include([
             path('', passer),
             path('/message/<int:message>', passer),

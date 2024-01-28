@@ -4,25 +4,28 @@ from django.urls import path, include
 from .views import handlers
 
 
-def passer(_):
+def passer(*_, **__):
     return HttpResponse(status=501)
 
 
 urlpatterns = [
-    path('history/', include([
-        path('channels', handlers.UsersLoader.channels),
-        path('channels/<int:channel>/', include([
-            path('messages', handlers.UsersLoader.messages),
-            path('users', passer),
-            path('permissions', passer),
-            path('admin/', include([
-                path('messages/', include([
-                    path('versions', passer),
-                    path('deleted', passer)
-                ])),
-                path('permissions', passer),
-                path('stats', passer)
+    path('channel/', include([
+        path('join', passer),
+        path('<int:channel>', include([
+            path('', passer),
+            path('/message/<int:message>', passer),
+            path('/messages/', include([
+                path('history', passer),
+                path('edited', passer),
+                path('deleted', passer)
             ]))
-        ]))
+        ])),
+    ])),
+    path('user', include([
+        path('', include([
+            path('/channels', passer),
+            path('/profile', passer)
+        ])),
+        path('/<int:account>', passer)
     ]))
 ]

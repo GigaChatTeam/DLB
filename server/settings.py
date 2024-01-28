@@ -4,6 +4,8 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=list[str])
 
+APPEND_SLASH = False
+
 ROOT_URLCONF = 'server.urls'
 
 SERVER_ID = config("SERVER_ID")
@@ -27,6 +29,7 @@ DATABASES = {
 }
 
 MIDDLEWARE = [
-    'server.middleware.authorization.AccessDeniedMiddleware',
+    'server.middleware.access.AccessDeniedMiddleware',
+    'server.middleware.access.NotFoundMiddleware',
     'server.middleware.parameters.MissingParametersMiddleware'
 ]

@@ -7,3 +7,7 @@ class MissingValues(Exception):
 
 class AccessDenied(Exception):
     ...
+
+
+class NotFound(Exception):
+    ...

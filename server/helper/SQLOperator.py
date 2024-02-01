@@ -99,6 +99,40 @@ class PermissionExecutor:
                 return False
 
 
+class Channels:
+    class Users:
+        class Permissions:
+            @staticmethod
+            def validate_presence(user_id: int, channel_id: int) -> bool:
+                cursor = connection.cursor()
+
+                cursor.execute(f"""
+                    SELECT channels.is_client_in_channel(%s, %s)
+                """, (user_id, channel_id))
+
+                return cursor.fetchone()[0]
+
+            @staticmethod
+            def validate_permissions(user: int, channel: int, permissions: list[int]) -> bool:
+                cursor = connection.cursor()
+
+                cursor.execute(f"""
+                    SELECT
+                        permission,
+                        status
+                    FROM channels.select_permissions(%s, %s) AS (
+                        permission BIGINT,
+                        status BOOLEAN
+                    )
+                    WHERE
+                        permission = ANY ( %s )
+                """, (user, channel, permissions))
+
+                print(data := cursor.fetchall())
+
+                return all(r[1] for r in data)
+
+
 class UsersExecutor:
     class Channels:
         class Meta:
@@ -189,21 +223,12 @@ class UsersExecutor:
         ):
             cursor = connection.cursor()
 
-            cursor.execute("""
-                SELECT channels.validate_select_messages(%s, %s)
-            """, (channel, client))
-
-            if not token_validator(client, token) or not cursor.fetchone()[0]:
-                raise exceptions.AccessDenied()
-
-            cursor = connection.cursor()
-
             cursor.execute(f"""
                 SELECT * FROM channels.select_messages_{sort}(%s::BIGINT, %s, %s, %s::INTEGER, %s::INTEGER) AS (
                     posted NUMERIC,
                     author BIGINT,
                     alias UUID,
-                    type VARCHAR(12),
+                    type TEXT,
                     media BIGINT[][],
                     data TEXT,
                     edited BOOLEAN,
@@ -211,18 +236,13 @@ class UsersExecutor:
                 )
             """, (channel, start, end, limit, offset))
 
-            returns = []
-
-            for record in cursor.fetchall():
-                returns.append({
-                    'posted': record[0],
-                    'author': record[1],
-                    'alias': record[2],
-                    'type': record[3].strip(),
-                    'media': record[4],
-                    'data': record[5],
-                    'edited': record[6],
-                    'files': record[7]
-                })
-
-            return returns
+            return [{
+                'posted': record[0],
+                'author': record[1],
+                'alias': record[2],
+                'type': record[3].strip(),
+                'media': record[4],
+                'data': record[5],
+                'edited': record[6],
+                'files': record[7]
+            } for record in cursor.fetchall()]

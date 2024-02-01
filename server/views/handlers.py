@@ -1,21 +1,15 @@
-from django.http import HttpRequest, JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 
-from . import parsers, exceptions
+from . import exceptions, forms
 from .. import helper
+from ..helper import validators
+from ..helper.validators import parse_form, validate_token
 
 
-class UsersLoader:
-    @staticmethod
-    @require_http_methods(["GET"])
-    def channels(request: HttpRequest):
-        data = helper.SQLOperator.UsersExecutor.Channels.get(**parsers.channels(request))
+def passer(*_, **__):
+    return HttpResponse(status=501)
 
-        return JsonResponse({
-            'status': 'Done',
-            'count': data.__len__(),
-            'data': data
-        }, status=200)
 
     @staticmethod
     @require_http_methods(["GET"])
@@ -27,19 +21,15 @@ class UsersLoader:
             'count': data.__len__(),
             'data': data
         }, status=200)
+class Channels:
 
-
-class ChannelsLoader:
-    class Meta:
+    class Invitations:
         @staticmethod
         @require_http_methods(["GET"])
-        def join(request: HttpRequest):
-            form = parsers.channel_join(request)
-
-            if not helper.SQLOperator.token_validator(form["client"], form["token"]):
-                raise exceptions.AccessDenied()
-
-            result = helper.SQLOperator.UsersExecutor.Channels.Meta.join(form["uri"])
+        @parse_form(pattern=forms.Channels.Invitations.VerifyURI)
+        @validate_token
+        def verify_uri(form: forms.Channels.Invitations.VerifyURI):
+            result = helper.SQLOperator.UsersExecutor.Channels.Meta.join(form.uri)
 
             if result is None:
                 raise exceptions.NotFound()
@@ -51,3 +41,27 @@ class ChannelsLoader:
                 )
 
             return JsonResponse(result)
+
+    class Messages:
+        class History:
+            @staticmethod
+            @require_http_methods(["GET"])
+            @parse_form(pattern=forms.Channels.Messages.History)
+            @validate_token
+            @validators.Channels.validate_presence
+            @validators.Channels.validate_permissions(permissions=[0, 1])
+            def messages(form: forms.Channels.Messages.History):
+                data = helper.SQLOperator.UsersExecutor.Channels.get_messages(
+                    channel=form.channel,
+                    start=form.start,
+                    end=form.end,
+                    limit=form.limit,
+                    offset=form.offset,
+                    sort=form.sort
+                )
+
+                return JsonResponse({
+                    'status': 'Done',
+                    'count': data.__len__(),
+                    'data': data
+                }, status=200)

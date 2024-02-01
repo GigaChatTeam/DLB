@@ -29,7 +29,7 @@ class Channels:
         @parse_form(pattern=forms.Channels.Invitations.VerifyURI)
         @validate_token
         def verify_uri(form: forms.Channels.Invitations.VerifyURI):
-            result = helper.SQLOperator.UsersExecutor.Channels.Meta.join(form.uri)
+            result = helper.SQLOperator.Channels.Meta.join(form.uri)
 
             if result is None:
                 raise exceptions.NotFound()
@@ -51,7 +51,7 @@ class Channels:
             @validators.Channels.validate_presence
             @validators.Channels.validate_permissions(permissions=[0, 1])
             def messages(form: forms.Channels.Messages.History):
-                data = helper.SQLOperator.UsersExecutor.Channels.get_messages(
+                data = helper.SQLOperator.Channels.Messages.History.get_messages(
                     channel=form.channel,
                     start=form.start,
                     end=form.end,

@@ -18,7 +18,11 @@ DATABASES = {
         'PASSWORD': config("DB_PASSWORD"),
         'HOST': config("DB_HOST"),
         'PORT': config("DB_PORT", cast=int),
-        'APPLICATION': config("APPLICATION").format(id=SERVER_ID)
+        'APPLICATION': config("APPLICATION").format(id=SERVER_ID),
+        'POOL': {
+            'MIN CONNECTIONS': config("DB_POOL_MIN_CONNECTIONS", cast=int),
+            'MAX CONNECTIONS': config("DB_POOL_MAX_CONNECTIONS", cast=int)
+        }
     },
     'S3': {
         'HOST': config("S3_HOST"),

@@ -71,8 +71,6 @@ class Channels:
                 if len(missing) != 0 or len(invalid) != 0:
                     raise exceptions.MissingValues(invalid, missing)
 
-
-
     class Messages:
         class History(RequestForm):
             def __init__(self, request: HttpRequest, channel: int):
@@ -95,7 +93,7 @@ class Channels:
                 except ValueError:
                     invalid['start'] = request.GET['start']
                 except KeyError:
-                    self.start = start=constants.UNIX
+                    self.start = constants.UNIX
 
                 try:
                     self.end = helper.parser.parse_datetime(request.GET['end'])

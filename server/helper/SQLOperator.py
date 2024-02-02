@@ -5,7 +5,6 @@ from .parser import verify as verify_token
 from ..helper import constants
 
 
-
 def token_validator(connection, client: int, token: str):
     cursor = connection.cursor()
 

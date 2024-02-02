@@ -9,6 +9,8 @@ from ..helper import constants
 
 class RequestForm:
     def __init__(self, request: HttpRequest, *, missing: list, invalid: dict):
+        self.sql_connection = None
+
         try:
             self.client = int(request.GET['client'])
         except KeyError:
@@ -20,6 +22,9 @@ class RequestForm:
             self.token = request.GET['token']
         except KeyError:
             missing.append('token')
+
+    def init_sql_connection(self, connection):
+        self.sql_connection = connection
 
 
 class Channels:

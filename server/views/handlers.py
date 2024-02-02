@@ -4,7 +4,7 @@ from django.views.decorators.http import require_http_methods
 from . import exceptions, forms
 from .. import helper
 from ..helper import validators, connections
-from ..helper.validators import parse_form, validate_token
+from ..helper.validators import init_form, validate_token
 
 
 def passer(*_, **__):
@@ -16,12 +16,11 @@ class Channels:
     class Invitations:
         @staticmethod
         @require_http_methods(["GET"])
-        @parse_form(pattern=forms.Channels.Invitations.VerifyURI)
-        @connections.SQLConnection.init_connection
+        @init_form(pattern=forms.Channels.Invitations.VerifyURI, connections=["SQL"])
         @validate_token
-        def verify_uri(form: forms.Channels.Invitations.VerifyURI, connection):
+        def verify_uri(form: forms.Channels.Invitations.VerifyURI):
             result = helper.SQLOperator.Channels.Meta.join(
-                connection=connection,
+                connection=form.sql_connection,
                 uri=form.uri
             )
 
@@ -40,14 +39,13 @@ class Channels:
         class History:
             @staticmethod
             @require_http_methods(["GET"])
-            @parse_form(pattern=forms.Channels.Messages.History)
-            @connections.SQLConnection.init_connection
+            @init_form(pattern=forms.Channels.Messages.History, connections=["SQL"])
             @validate_token
             @validators.Channels.validate_presence
             @validators.Channels.validate_permissions(permissions=[0, 1])
-            def messages(form: forms.Channels.Messages.History, connection):
+            def messages(form: forms.Channels.Messages.History):
                 data = helper.SQLOperator.Channels.Messages.History.get_messages(
-                    connection=connection,
+                    connection=form.sql_connection,
                     channel=form.channel,
                     start=form.start,
                     end=form.end,

@@ -1,6 +1,3 @@
-from types import FunctionType
-
-from psycopg2 import Error as SQLDBError
 from psycopg2.pool import ThreadedConnectionPool
 
 from server import settings
@@ -29,24 +26,9 @@ class SQLConnection:
         return cls.connections_pool.putconn(connection, key=key, close=close)
 
     @classmethod
-    def init_connection(cls, handler: FunctionType):
-        def wrapper(form, *args, **kwargs):
-            connection, key = cls._get_connection()
-            try:
-                return handler(form, connection, *args, **kwargs)
-            except SQLDBError as db_error:
-                connection.rollback()
-                raise db_error
-            finally:
-                try:
-                    connection.commit()
-                finally:
-                    cls._return_connection(connection, key=key)
-
-        return wrapper
+    def get_connection(cls):
+        return cls._get_connection()
 
     @classmethod
-    def disable_connection(cls, handler: FunctionType):
-        def wrapper(form, _, *args, **kwargs):
-            return handler(form, *args, **kwargs)
-        return wrapper
+    def return_connection(cls, connection, key=None):
+        return cls._return_connection(connection, key=key)

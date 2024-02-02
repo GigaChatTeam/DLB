@@ -10,22 +10,25 @@ def passer(*_, **__):
 
 urlpatterns = [
     path('channel/', include([
-        path('invitation', handlers.Channels.Invitations.verify_uri),
-        path('<int:channel>', include([
-            path('', passer),
-            path('/message/<int:message>', passer),
-            path('/messages/', include([
-                path('history', handlers.Channels.Messages.History.messages),
-                path('edited', passer),
-                path('deleted', passer)
-            ]))
+        path('by/', include([
+            path('invitation', handlers.Channels.Invitations.verify_uri),
+            path('id/<int:channel>', include([
+                path('', passer),
+                path('/message', include([
+                    path('', passer),
+                    path('/<int:message>', passer)
+                ])),
+                path('/messages/', include([
+                    path('history', handlers.Channels.Messages.History.messages),
+                    path('edited', passer),
+                    path('deleted', passer)
+                ])),
+            ])),
         ])),
+        path('search', passer)
     ])),
-    path('user', include([
-        path('', include([
-            path('/channels', passer),
-            path('/profile', passer)
-        ])),
-        path('/<int:account>', passer)
+    path('user/', include([
+        path('@me', passer),
+        path('@<int:account>', passer)
     ]))
 ]

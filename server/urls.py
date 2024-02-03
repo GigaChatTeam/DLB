@@ -28,7 +28,9 @@ urlpatterns = [
         path('search', passer)
     ])),
     path('user/', include([
-        path('@me', passer),
+        path('@me', include([
+            path('/channels', handlers.Channels.Users.get_presence_list)
+        ])),
         path('@<int:account>', passer)
     ]))
 ]

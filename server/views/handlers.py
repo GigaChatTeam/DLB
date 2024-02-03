@@ -3,13 +3,12 @@ from django.views.decorators.http import require_http_methods
 
 from . import exceptions, forms
 from .. import helper
-from ..helper import validators, connections
+from ..helper import validators
 from ..helper.validators import init_form, validate_token
 
 
 def passer(*_, **__):
     return HttpResponse(status=501)
-
 
 
 class Channels:
@@ -34,6 +33,37 @@ class Channels:
                 )
 
             return JsonResponse(result)
+
+    class Users:
+        @staticmethod
+        @require_http_methods(["GET"])
+        @init_form(pattern=forms.Channels.Users.ChannelsPresenceList, connections=["SQL"])
+        @validate_token
+        def get_presence_list(form: forms.Channels.Users.ChannelsPresenceList):
+            result = helper.SQLOperator.Channels.Users.get_presence_list(
+                connection=form.sql_connection,
+                user=form.client,
+                order=form.order,
+                sort=form.sort,
+                meta=form.meta,
+                limit=form.limit,
+                offset=form.offset
+            )
+
+            if form.meta:
+                for index, record in enumerate(result):
+                    if record["icon"] is not None:
+                        result[index]["icon"] = helper.S3Operator.get_presign_url(
+                            bucket=record["icon"]["bucket"],
+                            path=record["icon"]["path"]
+                        )
+
+            return JsonResponse({
+                'status': 'Done',
+                'count': result.__len__(),
+                'data': result
+            }, status=200)
+
 
     class Messages:
         class History:

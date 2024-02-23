@@ -1,27 +1,39 @@
 import datetime
+import ipaddress
 
 from django.http import HttpRequest
 
-from . import exceptions
 from .. import helper
 from ..helper import constants
+from ..middleware.exceptions import forms as exceptions
+
+
+class AuthorizeToken:
+    def __init__(self, token: str | None):
+        try:
+            client_id, token, *sup = token.split("-")
+            self.client = int(client_id or 0)
+            self.token = token
+        except (ValueError, AttributeError):
+            self.client = 0
+            self.token = ""
+
+
+class Headers:
+    def __init__(self, request: HttpRequest):
+        self.agent = request.headers.get('User-Agent')
+        self.addr = ipaddress.ip_address(request.META['REMOTE_ADDR'])
+        self.authorize = AuthorizeToken(request.headers.get('Authorization'))
 
 
 class RequestForm:
     def __init__(self, request: HttpRequest, *, missing: list, invalid: dict):
         self.sql_connection = None
 
-        try:
-            self.client = int(request.GET['client'])
-        except KeyError:
-            missing.append('client')
-        except ValueError:
-            invalid['client'] = request.GET['client']
+        self.tr_fix = False
+        self.tr_time = None
 
-        try:
-            self.token = request.GET['token']
-        except KeyError:
-            missing.append('token')
+        self.headers = Headers(request)
 
     def init_sql_connection(self, connection):
         self.sql_connection = connection
@@ -33,7 +45,7 @@ class Channels:
             super().__init__(
                 request,
                 missing=missing,
-                invalid=invalid
+                invalid=invalid,
             )
 
             try:
@@ -68,25 +80,21 @@ class Channels:
                     invalid=invalid
                 )
 
-                self.sort = request.GET.get("sort", "id")
-                if self.sort not in ("id", "activity"):
-                    invalid["sort"] = request.GET["sort"]
-
-                self.order = request.GET.get("order", "desc")
-                if self.order not in ("asc", "desc"):
-                    invalid["order"] = request.GET["order"]
-
-                try:
-                    self.meta = request.GET["meta"]
-                except KeyError:
+                self.meta = request.GET.get("meta", "true").lower()
+                if self.meta == "true":
+                    self.meta = True
+                elif self.meta == "false":
                     self.meta = False
                 else:
-                    if self.meta == "true":
-                        self.meta = True
-                    elif self.meta == "false":
-                        self.meta = False
-                    else:
-                        invalid["meta"] = request.GET["meta"]
+                    invalid["meta"] = request.GET["meta"]
+
+                self.sort = request.GET.get("sort", "desc").lower()
+                if self.sort not in ("desc", "asc"):
+                    invalid["sort"] = request.GET["sort"]
+
+                self.order = request.GET.get("order", "id").lower()
+                if self.order not in ("id", "activity"):
+                    invalid["order"] = request.GET["order"]
 
                 try:
                     self.limit = int(request.GET['limit'])
@@ -130,6 +138,30 @@ class Channels:
                     raise exceptions.MissingValues(invalid, missing)
 
     class Messages:
+        class Message(RequestForm):
+            def __init__(self, request: HttpRequest, channel: int, message_id: int):
+                missing = []
+                invalid = {}
+
+                super().__init__(
+                    request,
+                    missing=missing,
+                    invalid=invalid,
+                )
+
+                try:
+                    self.channel = int(channel)
+                except ValueError:
+                    invalid['channel'] = channel
+
+                try:
+                    self.id = int(message_id)
+                except ValueError:
+                    invalid['id'] = request.GET['id']
+
+                if len(missing) != 0 or len(invalid) != 0:
+                    raise exceptions.MissingValues(invalid, missing)
+
         class History(RequestForm):
             def __init__(self, request: HttpRequest, channel: int):
                 missing = []
@@ -138,8 +170,16 @@ class Channels:
                 super().__init__(
                     request,
                     missing=missing,
-                    invalid=invalid
+                    invalid=invalid,
                 )
+
+                self.meta = request.GET.get("meta", "true").lower()
+                if self.meta == "true":
+                    self.meta = True
+                elif self.meta == "false":
+                    self.meta = False
+                else:
+                    invalid["meta"] = request.GET["meta"]
 
                 try:
                     self.channel = int(channel)
@@ -158,7 +198,7 @@ class Channels:
                 except ValueError:
                     invalid['end'] = request.GET['end']
                 except KeyError:
-                    self.end = datetime.datetime.now()
+                    self.end = None
 
                 try:
                     self.limit = int(request.GET['limit'])

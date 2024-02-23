@@ -15,7 +15,7 @@ class SQLConnection:
     )
 
     @classmethod
-    def _get_connection(cls, *, key=None, isolation: int = 2):
+    def _get_connection(cls, *, key=None, isolation: int = 4):
         connection = cls.connections_pool.getconn(key=key)
         connection.autocommit = False
         connection.set_isolation_level(isolation)

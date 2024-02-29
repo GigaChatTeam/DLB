@@ -33,9 +33,7 @@ def init_form(*, pattern: type, connections: list[str] | tuple[str] = (), fix_tr
                     _connections["SQL"].commit()
                 finally:
                     SQLConnection.return_connection(_connections["SQL"], key=_connections["SQL-KEY"])
-
         return executor
-
     return wrapper
 
 

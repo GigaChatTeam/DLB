@@ -3,7 +3,6 @@ import ipaddress
 
 from django.http import HttpRequest
 
-from .. import helper
 from ..helper import constants
 from ..middleware.exceptions import forms as exceptions
 
@@ -187,14 +186,14 @@ class Channels:
                     invalid['channel'] = channel
 
                 try:
-                    self.start = helper.parser.parse_datetime(request.GET['start'])
+                    self.start = constants.UNIX + datetime.timedelta(microsecond=int(request.GET['start']))
                 except ValueError:
                     invalid['start'] = request.GET['start']
                 except KeyError:
                     self.start = constants.UNIX
 
                 try:
-                    self.end = helper.parser.parse_datetime(request.GET['end'])
+                    self.end = constants.UNIX + datetime.timedelta(microsecond=int(request.GET['end']))
                 except ValueError:
                     invalid['end'] = request.GET['end']
                 except KeyError:

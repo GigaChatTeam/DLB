@@ -1,11 +1,12 @@
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 
-from . import exceptions, forms
+from . import exceptions
+from . import forms as request_forms
 from .. import helper
-from ..helper import validators
 from ..helper.logging import log_request
-from ..helper.validators import init_form, validate_token
+from ..helper.validators import access_handlers
+from ..helper.validators.validators import init_form, ValidateAccess
 from ..middleware.exceptions.forms import MissingValues
 
 
@@ -17,11 +18,10 @@ class Channels:
     class Invitations:
         @staticmethod
         @require_http_methods(["GET"])
-        @init_form(pattern=forms.Channels.Invitations.VerifyURI, connections=["SQL"])
+        @init_form(pattern=request_forms.Channels.Invitations.VerifyURI, connections=["SQL"])
         @log_request
-        @validate_token
-        def verify_uri(form: forms.Channels.Invitations.VerifyURI):
-            result = helper.SQLOperator.Channels.Meta.join(
+        def verify_uri(form: request_forms.Channels.Invitations.VerifyURI):
+            result = helper.SQLOperator.Channels.Invitations.validate(
                 connection=form.sql_connection,
                 uri=form.uri
             )
@@ -40,10 +40,14 @@ class Channels:
     class Users:
         @staticmethod
         @require_http_methods(["GET"])
-        @init_form(pattern=forms.Channels.Users.ChannelsPresenceList, connections=["SQL"])
+        @init_form(pattern=request_forms.Channels.Users.ChannelsPresenceList, connections=["SQL"])
         @log_request
-        @validate_token
-        def get_presence_list(form: forms.Channels.Users.ChannelsPresenceList):
+        @ValidateAccess.validate_access(
+            required=
+            (all, [
+                access_handlers.ValidateToken,
+            ]))
+        def get_self_presence_list(form: request_forms.Channels.Users.ChannelsPresenceList):
             if (not form.meta) and (form.order == "id"):
                 result = helper.SQLOperator.Channels.Users.get_presence_list(
                     connection=form.sql_connection,
@@ -83,15 +87,22 @@ class Channels:
         class History:
             @staticmethod
             @require_http_methods(["GET"])
-            @init_form(pattern=forms.Channels.Messages.History, connections=["SQL"], fix_transaction=True)
+            @init_form(pattern=request_forms.Channels.Messages.History, connections=["SQL"], fix_transaction=True)
             @log_request
-            @validate_token
-            @validators.Channels.validate_presence
-            @validators.Channels.validate_permissions(permissions=[])
-            def messages(form: forms.Channels.Messages.History):
+            @ValidateAccess.validate_access(
+                required=
+                (any, [
+                    access_handlers.Channels.Meta.IsChannelPublic,
+                    (all, [
+                        access_handlers.ValidateToken,
+                        access_handlers.Channels.ValidateUserSelfPresence
+                    ])
+                ]))
+            def messages(form: request_forms.Channels.Messages.History):
                 form.end = form.end or form.tr_time
 
                 if not form.start < form.end <= form.tr_time:
+                    # TODO("Check this logic to correctness")
                     raise MissingValues({
                         "start": form.start.timestamp() * 1000,
                         "end": form.end.timestamp() * 1000

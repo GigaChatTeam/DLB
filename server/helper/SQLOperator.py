@@ -1,11 +1,7 @@
-import datetime
-from typing import Literal
-
-from .parser import verify as verify_token
-from ..helper import constants
+from typing import Literal, Iterable
 
 
-def token_validator(connection, client: int, token: str):
+def get_user_tokens(connection, client: int) -> Iterable[str]:
     cursor = connection.cursor()
 
     cursor.execute("""
@@ -17,43 +13,36 @@ def token_validator(connection, client: int, token: str):
             client = %s
     """, (client,))
 
-    for _token in cursor.fetchall():
-        if verify_token(token, _token[0].encode()):
-            return True
-
-    return False
+    yield from (r[0] for r in cursor.fetchall())
 
 
 class Channels:
     class Meta:
         @staticmethod
-        def join(connection, uri: str):
+        def get_channel_meta(connection, channel_id: int):
             cursor = connection.cursor()
 
             cursor.execute("""
-                       SELECT 
-                           channels."index".id,
-                           channels."index".title,
-                           channels."index".description,
-                           channels."index".public,
-                           files."index".id IS NOT NULL,
-                           files."index".bucket,
-                           files."index"."path"
-                       FROM channels.invitations
-                       JOIN
-                           channels."index"
-                           ON channels.invitations.channel = channels."index".id
-                       LEFT JOIN
-                           files."index"
-                           ON channels."index"."avatar" = files."index"."id"
-                       WHERE
-                           channels.invitations.uri = %s AND
-                           channels.invitations.enabled
-                   """, (uri,))
+                SELECT 
+                    "channels"."index"."id",
+                    "channels"."index"."title",
+                    "channels"."index"."description",
+                    "channels"."index"."public",
+                    "files"."index"."id" IS NOT NULL,
+                    "files"."index"."bucket",
+                    "files"."index"."path"
+                FROM "channels"."index"
+                LEFT JOIN
+                    "files"."index"
+                    ON
+                        "channels"."index"."icon" = "files"."index"."id"
+                WHERE
+                    "channels"."index"."id" = %s
+            """, (channel_id,))
 
             data = cursor.fetchone()
 
-            if data is None:
+            if not data:
                 return None
 
             return {
@@ -63,9 +52,28 @@ class Channels:
                 "public": data[3],
                 "icon": {
                     "bucket": data[5],
-                    "path": data[6]
-                } if data[4] else None
+                    "path": data[6],
+                } if data[4] else None,
             }
+
+        @staticmethod
+        def is_channel_public(connection, channel_id: int):
+            cursor = connection.cursor()
+
+            cursor.execute("""
+                SELECT 
+                    "channels"."index"."public"
+                FROM "channels"."index"
+                WHERE
+                    "channels"."index"."id" = %s
+            """, (channel_id,))
+
+            data = cursor.fetchone()
+
+            if not data:
+                return None
+
+            return data[0]
 
     class Users:
         @staticmethod
@@ -130,3 +138,45 @@ class Channels:
                 """, (user, channel))
 
                 return cursor.fetchone()[0]
+
+    class Invitations:
+        @staticmethod
+        def validate(connection, uri: str):
+            cursor = connection.cursor()
+
+            cursor.execute("""
+                SELECT 
+                    channels."index".id,
+                    channels."index".title,
+                    channels."index".description,
+                    channels."index".public,
+                    files."index".id IS NOT NULL,
+                    files."index".bucket,
+                    files."index"."path"
+                FROM channels.invitations
+                JOIN
+                    channels."index"
+                    ON channels.invitations.channel = channels."index".id
+                LEFT JOIN
+                    files."index"
+                    ON channels."index"."avatar" = files."index"."id"
+                WHERE
+                    channels.invitations.uri = %s AND
+                    channels.invitations.enabled
+            """, (uri,))
+
+            data = cursor.fetchone()
+
+            if data is None:
+                return None
+
+            return {
+                "id": data[0],
+                "title": data[1],
+                "description": data[2],
+                "public": data[3],
+                "icon": {
+                    "bucket": data[5],
+                    "path": data[6]
+                } if data[4] else None
+            }

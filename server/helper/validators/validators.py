@@ -1,13 +1,16 @@
+from typing import Union, Iterable
+
 from django.http import HttpRequest
 from psycopg2 import Error as DBSQLError
 
 from server.helper import SQLOperator
 from server.helper.connections import SQLConnection
+from server.helper.validators.access_handlers import Special
 from server.views import forms, exceptions
 from server.views.forms import RequestForm
 
 
-def init_form(*, pattern: type, connections: list[str] | tuple[str] = (), fix_transaction: bool = False):
+def init_form(*, pattern: type[RequestForm], connections: Iterable[str] = (), fix_transaction: bool = False):
     def wrapper(handler):
         def executor(request: HttpRequest, **kwargs):
             form: RequestForm = pattern(request, **kwargs)
@@ -26,30 +29,52 @@ def init_form(*, pattern: type, connections: list[str] | tuple[str] = (), fix_tr
                         form.tr_time = cursor.fetchone()[0]
                 return handler(form)
             except DBSQLError as db_error:
-                _connections["SQL"].rollback()
+                if "SQL" in connections:
+                    _connections["SQL"].rollback()
                 raise db_error
             finally:
-                try:
-                    _connections["SQL"].commit()
-                finally:
-                    SQLConnection.return_connection(_connections["SQL"], key=_connections["SQL-KEY"])
+                if "SQL" in connections:
+                    try:
+                        _connections["SQL"].commit()
+                    finally:
+                        SQLConnection.return_connection(_connections["SQL"], key=_connections["SQL-KEY"])
+
         return executor
-    return wrapper
-
-
-def validate_token(handler):
-    def wrapper(form: forms.RequestForm):
-        if form.headers.authorize is None:
-            raise exceptions.AccessDenied()
-
-        if not SQLOperator.token_validator(
-                connection=form.sql_connection,
-                client=form.headers.authorize.client,
-                token=form.headers.authorize.token):
-            raise exceptions.AccessDenied()
-        return handler(form)
 
     return wrapper
+
+
+class ValidateAccess:
+    type CompareType = Union[all, any]
+    type RequirementsTree = tuple[
+        ValidateAccess.CompareType, list[Union[Special, type[ValidateAccess.RequirementsTree]]]]
+
+    @classmethod
+    def validate_access(cls, *, required: RequirementsTree):
+        def wrapper(handler):
+            def executor(form: forms.RequestForm):
+                if not cls._validate_tree(required, form):
+                    raise exceptions.AccessDenied()
+
+                return handler(form)
+
+            return executor
+
+        return wrapper
+
+    @classmethod
+    def _validate_tree(cls, tree: RequirementsTree | tuple, form):
+        return tree[0](cls._validate_collect(tree[1], form))
+
+    @classmethod
+    def _validate_collect(cls, tree: list[Union[Special, type[RequirementsTree]]], form):
+        for step in tree:
+            if isinstance(step, tuple):
+                yield cls._validate_tree(step, form)
+            elif issubclass(step, Special):
+                yield step.validate_from_form(form)
+            else:
+                raise TypeError("Invalid type on requirements tree: %s" % step.__class__.__name__)
 
 
 class Channels:
@@ -64,7 +89,9 @@ class Channels:
                         permissions=permissions):
                     raise exceptions.AccessDenied()
                 return handler(form)
+
             return executor
+
         return wrapper
 
     @staticmethod
@@ -76,4 +103,5 @@ class Channels:
                     channel=form.channel):
                 raise exceptions.AccessDenied()
             return handler(form)
+
         return wrapper

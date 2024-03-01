@@ -29,7 +29,7 @@ urlpatterns = [
     ])),
     path('user/', include([
         path('@me', include([
-            path('/channels', handlers.Channels.Users.get_presence_list)
+            path('/channels', handlers.Channels.Users.get_self_presence_list)
         ])),
         path('@<int:account>', passer)
     ]))

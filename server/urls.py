@@ -13,7 +13,7 @@ urlpatterns = [
         path('by/', include([
             path('invitation', handlers.Channels.Invitations.verify_uri),
             path('id/<int:channel>', include([
-                path('', passer),
+                path('', handlers.Channels.Meta.get_meta),
                 path('/message', include([
                     path('', passer),
                     path('/<int:message>', passer)

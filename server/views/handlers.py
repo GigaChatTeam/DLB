@@ -15,6 +15,42 @@ def passer(*_, **__):
 
 
 class Channels:
+    class Meta:
+        @staticmethod
+        @require_http_methods(["GET"])
+        @init_form(pattern=request_forms.Channels.Meta, connections=["SQL"])
+        @log_request
+        @ValidateAccess.validate_access(
+            required=
+            (any, [
+                access_handlers.Channels.Meta.IsChannelPublic,
+                (all, [
+                    access_handlers.ValidateToken,
+                    access_handlers.Channels.ValidateUserSelfPresence
+                ])
+            ]))
+        def get_meta(form: request_forms.Channels.Meta):
+            result = helper.SQLOperator.Channels.Meta.get_channel_meta(
+                connection=form.sql_connection,
+                channel_id=form.channel,
+            )
+
+            if result is None:
+                raise exceptions.NotFound()
+
+            if result["icon"] is not None:
+                result["icon"] = {
+                    "id": result["icon"]["id"],
+                    "url": helper.S3Operator.get_presign_url(
+                        bucket=result["icon"]["bucket"],
+                        path=result["icon"]["path"])
+                }
+
+            return JsonResponse({
+                "status": "Done",
+                "data": result
+            })
+
     class Invitations:
         @staticmethod
         @require_http_methods(["GET"])
@@ -30,12 +66,17 @@ class Channels:
                 raise exceptions.NotFound()
 
             if result["icon"] is not None:
-                result["icon"] = helper.S3Operator.get_presign_url(
-                    bucket=result["icon"]["bucket"],
-                    path=result["icon"]["path"]
-                )
+                result["icon"] = {
+                    "id": result["icon"]["id"],
+                    "url": helper.S3Operator.get_presign_url(
+                        bucket=result["icon"]["bucket"],
+                        path=result["icon"]["path"])
+                }
 
-            return JsonResponse(result)
+            return JsonResponse({
+                "status": "Done",
+                "data": result
+            })
 
     class Users:
         @staticmethod

@@ -28,7 +28,7 @@ class Channels:
                     "channels"."index"."title",
                     "channels"."index"."description",
                     "channels"."index"."public",
-                    "files"."index"."id" IS NOT NULL,
+                    "files"."index"."id",
                     "files"."index"."bucket",
                     "files"."index"."path"
                 FROM "channels"."index"
@@ -51,9 +51,10 @@ class Channels:
                 "description": data[2],
                 "public": data[3],
                 "icon": {
+                    "id": data[4],
                     "bucket": data[5],
                     "path": data[6],
-                } if data[4] else None,
+                } if data[4] is not None else None,
             }
 
         @staticmethod
@@ -150,16 +151,16 @@ class Channels:
                     channels."index".title,
                     channels."index".description,
                     channels."index".public,
-                    files."index".id IS NOT NULL,
-                    files."index".bucket,
-                    files."index"."path"
+                    "files"."index".id IS NOT NULL,
+                    "files"."index".bucket,
+                    "files"."index"."path"
                 FROM channels.invitations
                 JOIN
                     channels."index"
                     ON channels.invitations.channel = channels."index".id
                 LEFT JOIN
-                    files."index"
-                    ON channels."index"."avatar" = files."index"."id"
+                    "files"."index"
+                    ON channels."index"."avatar" = "files"."index"."id"
                 WHERE
                     channels.invitations.uri = %s AND
                     channels.invitations.enabled
@@ -176,7 +177,8 @@ class Channels:
                 "description": data[2],
                 "public": data[3],
                 "icon": {
+                    "id": data[4],
                     "bucket": data[5],
                     "path": data[6]
-                } if data[4] else None
+                } if data[4] is not None else None
             }

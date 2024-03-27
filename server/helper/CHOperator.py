@@ -3,9 +3,14 @@ from typing import Literal
 
 import clickhouse_connect
 
+from server import settings
+
 connection = clickhouse_connect.get_client(
-    host='127.0.0.1',
-    compress=False
+    host=settings.DATABASES['CH']['HOST'],
+    port=settings.DATABASES['CH']['PORT'],
+    user=settings.DATABASES['CH']['USER'],
+    password=settings.DATABASES['CH']['PASSWORD'],
+    secure=settings.DATABASES['CH']['SECURE'],
 )
 
 

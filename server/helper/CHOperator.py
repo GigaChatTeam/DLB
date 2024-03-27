@@ -9,8 +9,8 @@ connection = clickhouse_connect.get_client(
     host=settings.DATABASES["CH"]["HOST"],
     port=settings.DATABASES["CH"]["PORT"],
     user=settings.DATABASES["CH"]["USER"],
-    password=settings.DATABASES["CH"]["PASSWORD'],
-    secure=settings.DATABASES['CH']['SECURE'],
+    password=settings.DATABASES["CH"]["PASSWORD"],
+    secure=settings.DATABASES["CH"]["SECURE"],
 )
 
 
@@ -25,14 +25,14 @@ def log_query(
         INSERT INTO users.logins
         VALUES
             (%s, %s, %s, %s, %s, %s, %s)
-    """, (user, datetime.datetime.now(datetime.UTC), 'query', success, error, agent, addr))
+    """, (user, datetime.datetime.now(datetime.UTC), "query", success, error, agent, addr))
 
 
 class Queries:
     class Channels:
         class Users:
             get_presence_list = {
-                (True, 'activity'): """
+                (True, "activity"): """
                     SELECT
                         `channels`.`users2channels`.`channel`,
                         argMax (`channels`.`users2channels`.`client-status`, `timestamp`),
@@ -71,7 +71,7 @@ class Queries:
                     LIMIT %s
                     OFFSET %s
                 """,
-                (True, 'id'): """
+                (True, "id"): """
                     SELECT
                         `channels`.`users2channels`.`channel`,
                         argMax (`channels`.`users2channels`.`client-status`, `timestamp`),
@@ -110,7 +110,7 @@ class Queries:
                     LIMIT %s
                     OFFSET %s
                 """,
-                (False, 'activity'): """
+                (False, "activity"): """
                     SELECT
                         `channels`.`users2channels`.`channel`
                     FROM `channels`.`users2channels`

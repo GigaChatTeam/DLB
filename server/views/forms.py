@@ -100,16 +100,16 @@ class Channels:
                     if self.limit not in range(1, 151):
                         raise ValueError()
                 except ValueError:
-                    invalid["limit"] = request.GET['limit']
+                    invalid["limit"] = request.GET["limit"]
                 except KeyError:
                     self.limit = 150
 
                 try:
-                    self.offset = int(request.GET['offset'])
+                    self.offset = int(request.GET["offset"])
                     if self.offset < 0:
                         raise ValueError()
                 except (ValueError, TypeError):
-                    invalid['offset'] = request.GET['offset']
+                    invalid["offset"] = request.GET["offset"]
                 except KeyError:
                     self.offset = 0
 
@@ -129,9 +129,9 @@ class Channels:
                 )
 
                 try:
-                    self.uri = request.GET['uri']
+                    self.uri = request.GET["uri"]
                 except KeyError:
-                    missing.append('uri')
+                    missing.append("uri")
 
                 if len(missing) != 0 or len(invalid) != 0:
                     raise exceptions.MissingValues(invalid, missing)
@@ -151,12 +151,12 @@ class Channels:
                 try:
                     self.channel = int(channel)
                 except ValueError:
-                    invalid['channel'] = channel
+                    invalid["channel"] = channel
 
                 try:
                     self.id = int(message_id)
                 except ValueError:
-                    invalid['id'] = request.GET['id']
+                    invalid["id"] = request.GET["id"]
 
                 if len(missing) != 0 or len(invalid) != 0:
                     raise exceptions.MissingValues(invalid, missing)
@@ -183,52 +183,52 @@ class Channels:
                 try:
                     self.channel = int(channel)
                 except ValueError:
-                    invalid['channel'] = channel
+                    invalid["channel"] = channel
 
                 try:
-                    self.start = constants.UNIX + datetime.timedelta(microsecond=int(request.GET['start']))
+                    self.start = constants.UNIX + datetime.timedelta(microsecond=int(request.GET["start"]))
                 except ValueError:
-                    invalid['start'] = request.GET['start']
+                    invalid["start"] = request.GET["start"]
                 except KeyError:
                     self.start = constants.UNIX
 
                 try:
-                    self.end = constants.UNIX + datetime.timedelta(microsecond=int(request.GET['end']))
+                    self.end = constants.UNIX + datetime.timedelta(microsecond=int(request.GET["end"]))
                 except ValueError:
-                    invalid['end'] = request.GET['end']
+                    invalid["end"] = request.GET["end"]
                 except KeyError:
                     self.end = None
 
                 try:
-                    self.limit = int(request.GET['limit'])
+                    self.limit = int(request.GET["limit"])
                     if self.limit not in range(1, 101):
                         raise ValueError()
                 except (ValueError, TypeError):
-                    invalid['limit'] = request.GET['limit']
+                    invalid["limit"] = request.GET["limit"]
                 except KeyError:
                     self.limit = 50
 
                 try:
-                    self.offset = int(request.GET['offset'])
+                    self.offset = int(request.GET["offset"])
                     if self.offset < 0:
                         raise ValueError()
                 except (ValueError, TypeError):
-                    invalid['offset'] = request.GET['offset']
+                    invalid["offset"] = request.GET["offset"]
                 except KeyError:
                     self.offset = 0
 
                 try:
-                    match request.GET['sort'].lower():
-                        case 'asc':
-                            self.sort = 'asc'
-                        case 'desc':
-                            self.sort = 'desc'
+                    match request.GET["sort"].lower():
+                        case "asc":
+                            self.sort = "asc"
+                        case "desc":
+                            self.sort = "desc"
                         case _:
                             raise ValueError()
                 except ValueError:
-                    invalid['sort'] = request.GET['sort']
+                    invalid["sort"] = request.GET["sort"]
                 except KeyError:
-                    self.sort = 'desc'
+                    self.sort = "desc"
 
                 if len(missing) != 0 or len(invalid) != 0:
                     raise exceptions.MissingValues(invalid, missing)

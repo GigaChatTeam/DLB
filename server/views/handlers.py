@@ -161,6 +161,6 @@ class Channels:
 
                 return JsonResponse({
                     "status": "Done",
-                    'count': data.__len__(),
-                    'data': data
+                    "count": data.__len__(),
+                    "data": data
                 }, status=200)

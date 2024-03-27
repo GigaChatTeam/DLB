@@ -18,11 +18,11 @@ class MissingAuthorizationMiddleware:
         if not isinstance(exception, MissingValues):
             return None
         return JsonResponse({
-            'status': 'Refused',
-            'reason': 'IncorrectArguments',
-            'arguments': {
-                'invalid': exception.invalid,
-                'missing': exception.missing
+            "status": "Refused",
+            "reason": "IncorrectArguments",
+            "arguments": {
+                "invalid": exception.invalid,
+                "missing": exception.missing
             }
         }, status=406)
 
@@ -40,10 +40,10 @@ class MissingParametersMiddleware:
         if not isinstance(exception, MissingValues):
             return None
         return JsonResponse({
-            'status': 'Refused',
-            'reason': 'IncorrectArguments',
-            'arguments': {
-                'invalid': exception.invalid,
-                'missing': exception.missing
+            "status": "Refused",
+            "reason": "IncorrectArguments",
+            "arguments": {
+                "invalid": exception.invalid,
+                "missing": exception.missing
             }
         }, status=406)

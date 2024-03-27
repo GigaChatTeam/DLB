@@ -119,9 +119,9 @@ class Channels:
                         }
 
             return JsonResponse({
-                'status': 'Done',
-                'count': result.__len__(),
-                'data': result
+                "status": "Done",
+                "count": result.__len__(),
+                "data": result
             }, status=200)
 
     class Messages:
@@ -160,7 +160,7 @@ class Channels:
                 )
 
                 return JsonResponse({
-                    'status': 'Done',
+                    "status": "Done",
                     'count': data.__len__(),
                     'data': data
                 }, status=200)

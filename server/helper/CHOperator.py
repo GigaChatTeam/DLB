@@ -6,10 +6,10 @@ import clickhouse_connect
 from server import settings
 
 connection = clickhouse_connect.get_client(
-    host=settings.DATABASES['CH']['HOST'],
-    port=settings.DATABASES['CH']['PORT'],
-    user=settings.DATABASES['CH']['USER'],
-    password=settings.DATABASES['CH']['PASSWORD'],
+    host=settings.DATABASES["CH"]["HOST"],
+    port=settings.DATABASES["CH"]["PORT"],
+    user=settings.DATABASES["CH"]["USER"],
+    password=settings.DATABASES["CH"]["PASSWORD'],
     secure=settings.DATABASES['CH']['SECURE'],
 )
 

@@ -7,10 +7,10 @@ from . import SQLOperator
 from .. import settings
 
 connection: minio.Minio = minio.Minio(
-    settings.DATABASES['S3']['HOST'],
-    access_key=settings.DATABASES['S3']['ACCESS_KEY'],
-    secret_key=settings.DATABASES['S3']['SECRET_KEY'],
-    secure=settings.DATABASES['S3']['SECURE'],
+    settings.DATABASES["S3"]["HOST"],
+    access_key=settings.DATABASES["S3"]["ACCESS_KEY"],
+    secret_key=settings.DATABASES["S3"]["SECRET_KEY"],
+    secure=settings.DATABASES["S3"]["SECURE"],
 )
 
 

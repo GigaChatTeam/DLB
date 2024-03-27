@@ -20,9 +20,9 @@ class AuthorizeToken:
 
 class Headers:
     def __init__(self, request: HttpRequest):
-        self.agent = request.headers.get('User-Agent')
-        self.addr = ipaddress.ip_address(request.META['REMOTE_ADDR'])
-        self.authorize = AuthorizeToken(request.headers.get('Authorization'))
+        self.agent = request.headers.get("User-Agent")
+        self.addr = ipaddress.ip_address(request.META["REMOTE_ADDR"])
+        self.authorize = AuthorizeToken(request.headers.get("Authorization"))
 
 
 class RequestForm:
@@ -50,7 +50,7 @@ class Channels:
             try:
                 self.channel = int(channel)
             except ValueError:
-                invalid['channel'] = channel
+                invalid["channel"] = channel
 
     class Meta(SuperPatternChannel):
         def __init__(self, request: HttpRequest, channel: int):
@@ -96,11 +96,11 @@ class Channels:
                     invalid["order"] = request.GET["order"]
 
                 try:
-                    self.limit = int(request.GET['limit'])
+                    self.limit = int(request.GET["limit"])
                     if self.limit not in range(1, 151):
                         raise ValueError()
                 except ValueError:
-                    invalid['limit'] = request.GET['limit']
+                    invalid["limit"] = request.GET['limit']
                 except KeyError:
                     self.limit = 150
 

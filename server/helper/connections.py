@@ -5,12 +5,12 @@ from server import settings
 
 class SQLConnection:
     connections_pool: ThreadedConnectionPool = ThreadedConnectionPool(
-        settings.DATABASES['default']['POOL']['MIN CONNECTIONS'],
-        settings.DATABASES['default']['POOL']['MAX CONNECTIONS'],
-        host=settings.DATABASES['default']['HOST'],
-        port=settings.DATABASES['default']['PORT'],
-        user=settings.DATABASES['default']['USER'],
-        password=settings.DATABASES['default']['PASSWORD'],
+        settings.DATABASES["default"]["POOL"]["MIN CONNECTIONS"],
+        settings.DATABASES["default"]["POOL"]["MAX CONNECTIONS"],
+        host=settings.DATABASES["default"]["HOST"],
+        port=settings.DATABASES["default"]["PORT"],
+        user=settings.DATABASES["default"]["USER"],
+        password=settings.DATABASES["default"]["PASSWORD'],
         application_name=settings.DATABASES['default']['APPLICATION']
     )
 

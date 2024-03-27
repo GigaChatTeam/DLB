@@ -9,12 +9,12 @@ def passer(*_, **__):
 
 
 urlpatterns = [
-    path('channel/', include([
-        path('by/', include([
-            path('invitation', handlers.Channels.Invitations.verify_uri),
-            path('id/<int:channel>', include([
-                path('', handlers.Channels.Meta.get_meta),
-                path('/message', include([
+    path("channel/", include([
+        path("by/", include([
+            path("invitation", handlers.Channels.Invitations.verify_uri),
+            path("id/<int:channel>", include([
+                path("", handlers.Channels.Meta.get_meta),
+                path("/message', include([
                     path('', passer),
                     path('/<int:message>', passer)
                 ])),

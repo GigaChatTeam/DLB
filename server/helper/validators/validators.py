@@ -25,7 +25,7 @@ def init_form(*, pattern: type[RequestForm], connections: Iterable[str] = (), fi
 
                     if form.tr_fix:
                         cursor = _connections["SQL"].cursor()
-                        cursor.execute("SELECT TIMEZONE(\"UTC\", now())")
+                        cursor.execute("SELECT TIMEZONE(\'UTC\', now())")
                         form.tr_time = cursor.fetchone()[0]
                 return handler(form)
             except DBSQLError as db_error:

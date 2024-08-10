@@ -5,17 +5,17 @@ from server import settings
 
 class SQLConnection:
     connections_pool: ThreadedConnectionPool = ThreadedConnectionPool(
-        settings.DATABASES['default']['POOL']['MIN CONNECTIONS'],
-        settings.DATABASES['default']['POOL']['MAX CONNECTIONS'],
-        host=settings.DATABASES['default']['HOST'],
-        port=settings.DATABASES['default']['PORT'],
-        user=settings.DATABASES['default']['USER'],
-        password=settings.DATABASES['default']['PASSWORD'],
-        application_name=settings.DATABASES['default']['APPLICATION']
+        settings.DATABASES["SQL"]["POOL"]["MIN CONNECTIONS"],
+        settings.DATABASES["SQL"]["POOL"]["MAX CONNECTIONS"],
+        host=settings.DATABASES["SQL"]["HOST"],
+        port=settings.DATABASES["SQL"]["PORT"],
+        user=settings.DATABASES["SQL"]["USER"],
+        password=settings.DATABASES["SQL"]["PASSWORD"],
+        application_name=settings.DATABASES["SQL"]["APPLICATION"],
     )
 
     @classmethod
-    def _get_connection(cls, *, key=None, isolation: int = 2):
+    def _get_connection(cls, *, key=None, isolation: int = 4):
         connection = cls.connections_pool.getconn(key=key)
         connection.autocommit = False
         connection.set_isolation_level(isolation)
